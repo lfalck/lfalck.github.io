@@ -1,22 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[.NET Developer]]></title><description><![CDATA[Ludvig Falck is a Freelance .NET developer working with Microsoft Azure, Systems Integration, Dynamics 365 (CRM) and much more.]]></description><link>https://lfalck.se</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 30 Nov 2019 19:26:39 GMT</lastBuildDate><item><title><![CDATA[Installing a SFTP server on an Azure Windows VM]]></title><description><![CDATA[I recently got the task to add SFTP support to an existing Windows Server machine running on an Azure VM and thought i would share the steps…]]></description><link>https://lfalck.se/installing-a-windows-sftp-server/</link><guid isPermaLink="false">https://lfalck.se/installing-a-windows-sftp-server/</guid><pubDate>Wed, 31 Jul 2019 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I recently got the task to add SFTP support to an existing Windows Server machine running on an Azure VM and thought i would share the steps.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[.NET Developer]]></title><description><![CDATA[Ludvig Falck is a Freelance .NET developer working with Microsoft Azure, Systems Integration, Dynamics 365 (CRM) and much more.]]></description><link>https://lfalck.se</link><generator>GatsbyJS</generator><lastBuildDate>Mon, 09 Dec 2019 12:28:54 GMT</lastBuildDate><item><title><![CDATA[Installing a SFTP server on an Azure Windows VM]]></title><description><![CDATA[I recently got the task to add SFTP support to an existing Windows Server machine running on an Azure VM and thought i would share the steps…]]></description><link>https://lfalck.se/installing-a-windows-sftp-server/</link><guid isPermaLink="false">https://lfalck.se/installing-a-windows-sftp-server/</guid><pubDate>Wed, 31 Jul 2019 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I recently got the task to add SFTP support to an existing Windows Server machine running on an Azure VM and thought i would share the steps.&lt;/p&gt;
 &lt;p&gt;There is a &lt;a href=&quot;https://winscp.net/eng/docs/guide_windows_openssh_server&quot;&gt;great guide at winscp.net&lt;/a&gt; which gets us most of the way, paraphrased here:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&quot;https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win64.zip&quot;&gt;Download&lt;/a&gt; the latest OpenSSH for Windows binaries&lt;/li&gt;
 &lt;li&gt;Extract to C:\Program Files\OpenSSH&lt;/li&gt;
 &lt;li&gt;Run &lt;strong&gt;install-sshd.ps1&lt;/strong&gt; as admin&lt;/li&gt;
-&lt;li&gt;Allow inbound traffic to port 22 (or a custom port):
-&lt;code&gt;New-NetFirewallRule -Name sshd -DisplayName &apos;OpenSSH SSH Server&apos; -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Allow inbound traffic to port 22 (or a custom port): &lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;powershell&quot;&gt;&lt;pre class=&quot;language-powershell&quot;&gt;&lt;code class=&quot;language-powershell&quot;&gt;New&lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;NetFirewallRule &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;Name sshd &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;DisplayName &lt;span class=&quot;token string&quot;&gt;&apos;OpenSSH SSH Server&apos;&lt;/span&gt; `
+ &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;Enabled True &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;Direction Inbound &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;Protocol TCP &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;Action Allow &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;LocalPort 22&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
 &lt;li&gt;Add the same firewall rule to the Azure VM&lt;/li&gt;
 &lt;li&gt;Start the Windows service &lt;strong&gt;OpenSSH SSH Server&lt;/strong&gt; and configure automatic start&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;We are now up and running and you should be able to connect with an existing Windows account. However, you end up in the users home directory and you can browse to e.g. &lt;strong&gt;C:&lt;/strong&gt; which is probably not what you want.&lt;/p&gt;
 &lt;p&gt;To restrict access to a folder for the group sftpusers, we can add the following to &lt;strong&gt;C:\ProgramData\ssh\sshd_config&lt;/strong&gt; &lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Match Group sftpusers ChrootDirectory c:/sftp AllowTCPForwarding no X11Forwarding no ForceCommand internal-sftp&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;shell&quot;&gt;&lt;pre class=&quot;language-shell&quot;&gt;&lt;code class=&quot;language-shell&quot;&gt;Match Group sftpusers
+    ChrootDirectory c:/sftp
+    AllowTCPForwarding no
+    X11Forwarding no
+    ForceCommand internal-sftp`&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;In case we want to restrict each user to a subfolder  we can instead add this:&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Match User sftpuser ChrootDirectory c:/sftp/user AllowTCPForwarding no X11Forwarding no ForceCommand internal-sftp&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;shell&quot;&gt;&lt;pre class=&quot;language-shell&quot;&gt;&lt;code class=&quot;language-shell&quot;&gt;Match User sftpuser
+    ChrootDirectory c:/sftp/user
+    AllowTCPForwarding no
+    X11Forwarding no
+    ForceCommand internal-sftp&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Thanks to Falko Timme for &lt;a href=&quot;https://www.howtoforge.com/restricting-users-to-sftp-plus-setting-up-chrooted-ssh-sftp-debian-squeeze&quot;&gt;the tutorial&lt;/a&gt; where this is described.&lt;/p&gt;
 &lt;p&gt;If you want to use a port other than 22, you also need to uncomment and change this line in &lt;strong&gt;sshd_config&lt;/strong&gt;
-&lt;code&gt;# Port 22&lt;/code&gt;&lt;/p&gt;
+&lt;code class=&quot;language-text&quot;&gt;# Port 22&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;That is all, have a good day!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Liquid Template editing in Visual Studio Code]]></title><description><![CDATA[Visual Studio Code has excellent support for creating Liquid Templates for Azure API Management or Logic Apps. With the right extensions it…]]></description><link>https://lfalck.se/liquid-template-editing-in-visual-studio-code/</link><guid isPermaLink="false">https://lfalck.se/liquid-template-editing-in-visual-studio-code/</guid><pubDate>Mon, 24 Sep 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Visual Studio Code has excellent support for creating Liquid Templates for Azure API Management or Logic Apps. With the right extensions it can provide both code completion and a live preview which displays the output of your template while you are editing it. With a split editor you can see both the input, the transform and the output at the same time.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;https://www.dropbox.com/s/pxg6vnh2hwd3e7d/vscode-liquid.png?raw=1&quot; alt=&quot;Liquid Template editing in Visual Studio Code&quot;&gt;&lt;/p&gt;
 &lt;h5&gt;Getting started&lt;/h5&gt;
@@ -41,106 +52,83 @@
 &lt;p&gt;You can check them out on &lt;a href=&quot;https://github.com/lfalck/AzureRestApiPostmanCollections&quot;&gt;GitHub&lt;/a&gt; and continue reading if you are interested in the implementation details.&lt;/p&gt;
 &lt;h2&gt;Azure Service Bus and Event Hubs&lt;/h2&gt;
 &lt;p&gt;To use the Azure Service Bus and Event Hubs REST APIs a SAS token needs to be included in the Authorization header of all operations. A SAS token grants time limited permissions to a particular Azure resource. Brent Stineman wrote &lt;a href=&quot;https://brentdacodemonkey.wordpress.com/2015/02/21/sas-its-just-another-token&quot;&gt;a great blog post&lt;/a&gt; with more details.&lt;/p&gt;
-&lt;p&gt;Examples how to generate SAS tokens can be found &lt;a href=&quot;https://docs.microsoft.com/en-us/rest/api/eventhub/generate-sas-token&quot;&gt;here&lt;/a&gt;, and since Postman uses JavaScript as its scripting language the NodeJS part is what is interesting. Unfortunately, the example uses the &lt;code&gt;crypto&lt;/code&gt; and &lt;code&gt;utf8&lt;/code&gt; npm packages, and there is currently no way to use external libraries in Postman. However, Postman has a number of &lt;a href=&quot;https://www.getpostman.com/docs/postman/scripts/postman_sandbox_api_reference&quot;&gt;built-in library modules&lt;/a&gt; and &lt;code&gt;crypto-js&lt;/code&gt; is the one that is useful in this case. &lt;/p&gt;
-&lt;p&gt;This is the NodeJS example from the link above but rewritten to use &lt;code&gt;crypto-js&lt;/code&gt;. I also lowered the lifetime of the token to one minute since we will regenerate it for each request.&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-js&quot;&gt;function createServiceBusOrEventHubsSASToken(resourceUri, sasKeyName, sasKey) {
-    if (!resourceUri || !sasKeyName || !sasKey) {
-        throw &quot;Missing required parameter&quot;;
-    }
-    const encoded = encodeURIComponent(resourceUri);
-    const now = new Date();
-    const minute = 60;
-    const ttl = Math.round(now.getTime() / 1000) + minute;
-    const signature = encoded + &apos;\n&apos; + ttl;
-    const hash = CryptoJS.HmacSHA256(signature, sasKey)
-        .toString(CryptoJS.enc.Base64);
-    return &apos;SharedAccessSignature sr=&apos; + encoded + &apos;&amp;#x26;sig=&apos; +
-        encodeURIComponent(hash) + &apos;&amp;#x26;se=&apos; + ttl + &apos;&amp;#x26;skn=&apos; + sasKeyName;
-}
-&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Examples how to generate SAS tokens can be found &lt;a href=&quot;https://docs.microsoft.com/en-us/rest/api/eventhub/generate-sas-token&quot;&gt;here&lt;/a&gt;, and since Postman uses JavaScript as its scripting language the NodeJS part is what is interesting. Unfortunately, the example uses the &lt;code class=&quot;language-text&quot;&gt;crypto&lt;/code&gt; and &lt;code class=&quot;language-text&quot;&gt;utf8&lt;/code&gt; npm packages, and there is currently no way to use external libraries in Postman. However, Postman has a number of &lt;a href=&quot;https://www.getpostman.com/docs/postman/scripts/postman_sandbox_api_reference&quot;&gt;built-in library modules&lt;/a&gt; and &lt;code class=&quot;language-text&quot;&gt;crypto-js&lt;/code&gt; is the one that is useful in this case. &lt;/p&gt;
+&lt;p&gt;This is the NodeJS example from the link above but rewritten to use &lt;code class=&quot;language-text&quot;&gt;crypto-js&lt;/code&gt;. I also lowered the lifetime of the token to one minute since we will regenerate it for each request.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;javascript&quot;&gt;&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;createServiceBusOrEventHubsSASToken&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token parameter&quot;&gt;resourceUri&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; sasKeyName&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; sasKey&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;!&lt;/span&gt;resourceUri &lt;span class=&quot;token operator&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;!&lt;/span&gt;sasKeyName &lt;span class=&quot;token operator&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;!&lt;/span&gt;sasKey&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;throw&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Missing required parameter&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; encoded &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;encodeURIComponent&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;resourceUri&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; now &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;Date&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; minute &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;60&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; ttl &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; Math&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;round&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;now&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getTime&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; minute&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; signature &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; encoded &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&apos;\n&apos;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; ttl&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; hash &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; CryptoJS&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;HmacSHA256&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;signature&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; sasKey&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;CryptoJS&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;enc&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Base64&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&apos;SharedAccessSignature sr=&apos;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; encoded &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&apos;&amp;amp;sig=&apos;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;encodeURIComponent&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hash&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&apos;&amp;amp;se=&apos;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; ttl &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&apos;&amp;amp;skn=&apos;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; sasKeyName&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;This function is used in a collection level pre-request script which means it will run before every request in the collection. The parameters to the script are taken from collection variables and the resulting token is stored in another collection variable and used in in all requests.&lt;/p&gt;
-&lt;p&gt;Since the SAS key gives full access to a particular Service Bus or Event Hubs namespace, you might want to take some of these precautions:  &lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Only use this in your development and test environments&lt;/li&gt;
-&lt;li&gt;Use a separate shared access policy for Postman with only the listen and send permissions&lt;/li&gt;
-&lt;li&gt;Disable Postman Sync unless you want to sync the SAS key to your Postman account&lt;/li&gt;
-&lt;/ul&gt;
 &lt;h2&gt;Azure Storage&lt;/h2&gt;
 &lt;p&gt;Creating a collection for Azure storage was more straightforward since you have the ability to generate an account level SAS query string directly in the portal by going to a storage account in the Azure Portal and clicking &lt;strong&gt;Shared access signature&lt;/strong&gt;. &lt;/p&gt;
-&lt;p&gt;Some recommendations: &lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Only add the permissions you actually need&lt;/li&gt;
-&lt;li&gt;Only allow https&lt;/li&gt;
-&lt;li&gt;Add your client ip&lt;/li&gt;
-&lt;li&gt;Set an expiration date&lt;/li&gt;
-&lt;/ul&gt;
 &lt;h2&gt;Azure Event Grid&lt;/h2&gt;
-&lt;p&gt;The only relevant action available for Azure Event Grid is to send events to custom Topics. Authentication is provided by a SAS key in a custom header called &lt;strong&gt;aeg-sas-key&lt;/strong&gt;. There are currently not many options to increase security except the option to regenerate keys. &lt;/p&gt;
+&lt;p&gt;The only relevant action available for Azure Event Grid is to send events to custom Topics. Authentication is provided by a SAS key in a custom header called &lt;strong&gt;aeg-sas-key&lt;/strong&gt;.&lt;/p&gt;
 &lt;p&gt;The body format looks like this:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;[{
-  &quot;id&quot;: &quot;{{$guid}}&quot;,
-  &quot;eventType&quot;: &quot;recordInserted&quot;,
-  &quot;subject&quot;: &quot;myapp/messages&quot;,
-  &quot;eventTime&quot;: &quot;{{currentTime}}&quot;,
-  &quot;data&quot;: {
-    &quot;message&quot;: &quot;Hello World Event Grid!&quot;
-  },
-  &quot;dataVersion&quot;: &quot;1.0&quot;
-}]
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;code&gt;{{$guid}}&lt;/code&gt; is a dynamic Postman variable which generates a GUID and &lt;code&gt;{{currentTime}}&lt;/code&gt; is populated with a timestamp in a pre-request script.&lt;/p&gt;
-&lt;p&gt;That is all, have a good day!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Logic Apps Active Directory OAuth Authentication for Microsoft Graph]]></title><description><![CDATA[Using the Microsoft Graph REST API in a Logic App is a nice way of creating integrations that work with Azure Active Directory. There are…]]></description><link>https://lfalck.se/logic-app-microsoft-graph-oauth/</link><guid isPermaLink="false">https://lfalck.se/logic-app-microsoft-graph-oauth/</guid><pubDate>Sun, 01 Apr 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Using the Microsoft Graph REST API in a Logic App is a nice way of creating integrations that work with Azure Active Directory. There are instructions how to use the API with Active Directory OAuth Authentication &lt;a href=&quot;https://developer.microsoft.com/en-us/graph/docs/concepts/auth_v2_service&quot;&gt;here&lt;/a&gt;, but they do not map directly to the built in authentication in Logic Apps, so i thought i would share what worked for me. This example queries the API for users but it should work with any Microsoft Graph query given the right permissions.&lt;/p&gt;
-&lt;p&gt;To use Active Directory OAuth Authentication in a Logic App we need to create an Application Registration. There are two ways to do this, in the Azure portal or in the new &lt;a href=&quot;https://apps.dev.microsoft.com&quot;&gt;Application Registration Portal&lt;/a&gt; for Azure Active Directory v2.0. Both will work for Microsoft Graph, but be aware that Azure Active Directory v2.0 is still in development, so not all APIs are available in the new portal. You can read more &lt;a href=&quot;https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-appmodel-v2-overview&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
-&lt;h5&gt;1a. Register your application in the Azure portal&lt;/h5&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;json&quot;&gt;&lt;pre class=&quot;language-json&quot;&gt;&lt;code class=&quot;language-json&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;{{$guid}}&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;eventType&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;recordInserted&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;subject&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;myapp/messages&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;eventTime&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;{{currentTime}}&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;data&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token property&quot;&gt;&quot;message&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Hello World Event Grid!&quot;&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;dataVersion&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;1.0&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;code class=&quot;language-text&quot;&gt;{{$guid}}&lt;/code&gt; is a dynamic Postman variable which generates a GUID and &lt;code class=&quot;language-text&quot;&gt;{{currentTime}}&lt;/code&gt; is populated with a timestamp in a pre-request script.&lt;/p&gt;
+&lt;p&gt;That is all, have a good day!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Logic Apps Active Directory OAuth Authentication for Microsoft Graph]]></title><description><![CDATA[Using the Microsoft Graph REST API in a Logic App is a nice way of creating integrations that work with Azure Active Directory. There are…]]></description><link>https://lfalck.se/logic-app-microsoft-graph-oauth/</link><guid isPermaLink="false">https://lfalck.se/logic-app-microsoft-graph-oauth/</guid><pubDate>Sun, 01 Apr 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Using the Microsoft Graph REST API in a Logic App is a nice way of creating integrations that work with Azure Active Directory. There are instructions how to use the API with Active Directory OAuth Authentication &lt;a href=&quot;https://docs.microsoft.com/en-us/graph/auth-v2-service&quot;&gt;here&lt;/a&gt;, but they do not map directly to the built in authentication in Logic Apps, so i thought i would share what worked for me. This example queries the API for users but it should work with any Microsoft Graph query given the right permissions.&lt;/p&gt;
+&lt;h2&gt;1. Register your application in the Azure portal&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;Login to the &lt;a href=&quot;https://portal.azure.com&quot;&gt;Azure Portal&lt;/a&gt; and go to Azure Active Directory. &lt;/li&gt;
-&lt;li&gt;Go to &lt;strong&gt;App Registrations&lt;/strong&gt; and click &lt;strong&gt;New application registration&lt;/strong&gt;.&lt;/li&gt;
-&lt;li&gt;Enter a name, choose &quot;Webb app / API&quot; as Application type and enter a Redirect URL, e.g. https//localhost/myapp. &lt;/li&gt;
-&lt;li&gt;Click &lt;strong&gt;Settings&lt;/strong&gt; in the newly created application and go to &lt;strong&gt;Required permissions&lt;/strong&gt;. Add the application permission &quot;Read directory data&quot; for Microsoft Graph.&lt;/li&gt;
-&lt;li&gt;Go to &lt;strong&gt;Keys&lt;/strong&gt;, generate a new key and store the output somewhere secure.&lt;/li&gt;
-&lt;li&gt;If you are an Azure Active Directory administrator, you can click &lt;strong&gt;Grant Permissions&lt;/strong&gt; directly, otherwise you need to ask an admin to do it.&lt;/li&gt;
+&lt;li&gt;Go to &lt;strong&gt;App Registrations&lt;/strong&gt; and click &lt;strong&gt;New registration&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Enter a name and click register, leave other options as default.&lt;/li&gt;
+&lt;li&gt;Click &lt;strong&gt;View API Permissions&lt;/strong&gt;, then &lt;strong&gt;Add a permission&lt;/strong&gt; .&lt;/li&gt;
+&lt;li&gt;Choose &lt;strong&gt;Microsoft Graph&lt;/strong&gt;, select &lt;strong&gt;Application permissions&lt;/strong&gt; and add &quot;Directory.Read.All&quot;.&lt;/li&gt;
+&lt;li&gt;Go to &lt;strong&gt;Certificates &amp;#x26; secrets&lt;/strong&gt;, generate a new client secret and store the output somewhere secure.&lt;/li&gt;
+&lt;li&gt;If you are an Azure Active Directory administrator, you can click &lt;strong&gt;Grant admin consent for (your organization)&lt;/strong&gt; directly, otherwise you need to ask an admin to do it.&lt;/li&gt;
 &lt;/ol&gt;
-&lt;h5&gt;1b. Register your application in the Application Registration Portal&lt;/h5&gt;
-&lt;ol&gt;
-&lt;li&gt;Go to the &lt;a href=&quot;https://apps.dev.microsoft.com&quot;&gt;Application Registration Portal&lt;/a&gt; and create a new application by clicking &lt;strong&gt;Add an app&lt;/strong&gt;. &lt;/li&gt;
-&lt;li&gt;Click &lt;strong&gt;Generate New Password&lt;/strong&gt; and store the output somewhere secure.&lt;/li&gt;
-&lt;li&gt;Click &lt;strong&gt;Add Platform&lt;/strong&gt;, choose Web and enter a Redirect URL, e.g. https//localhost/myapp. &lt;/li&gt;
-&lt;li&gt;Scroll down to &lt;strong&gt;Microsoft Graph Permissions&lt;/strong&gt; and add the application permission &quot;Directory.Read.All&quot;. &lt;/li&gt;
-&lt;li&gt;Click save on the bottom of the page.&lt;/li&gt;
-&lt;li&gt;Create a link with the following format and send to an administrator for consent, or open it yourself if you are an admin:
-&lt;code&gt;https://login.microsoftonline.com/{Directory ID from Azure Active Directory &gt; Properties}/adminconsent?client_id={Application ID from Application Registration}&amp;#x26;redirect_uri={Redirect URL from Application Registration}&lt;/code&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h5&gt;2. Use the application in your Logic App&lt;/h5&gt;
-&lt;p&gt;In an HTTP action, use &lt;a href=&quot;https://graph.microsoft.com/v1.0/users&quot;&gt;https://graph.microsoft.com/v1.0/users&lt;/a&gt; as URI and enter the following values after clicking &lt;strong&gt;Show advanced options&lt;/strong&gt;:&lt;/p&gt;
-&lt;div style=&quot;overflow-x:auto;&quot;&gt;
- &lt;table&gt;
-  &lt;tr&gt;
-    &lt;th&gt;Authentication&lt;/td&gt;
-    &lt;td&gt;Active Directory OAuth&lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-    &lt;th&gt;Authority&lt;/td&gt;
-    &lt;td&gt;https://login.windows.net (default)&lt;/td&gt;
-  &lt;/tr&gt;
-   &lt;tr&gt;
-    &lt;th&gt;Tenant&lt;/td&gt;
-    &lt;td&gt;Directory ID from Azure Active Directory &gt; Properties&lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-    &lt;th&gt;Audience&lt;/td&gt;
-    &lt;td&gt;https://graph.microsoft.com/&lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-    &lt;th&gt;Client ID&lt;/td&gt;
-    &lt;td&gt;Application ID from the Application Registration&lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-    &lt;th&gt;Secret&lt;/td&gt;
-    &lt;td&gt;Key/password from the Application Registration&lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/table&gt; 
-&lt;/div&gt;
-The Logic App should now be able to fetch users from your Azure Active Directory.
-&lt;p&gt;Another possibility which might make this even easier is the &lt;a href=&quot;https://docs.microsoft.com/en-us/connectors/webcontents/&quot;&gt;HTTP with Azure AD connector&lt;/a&gt; which is currently in preview. I could not get it to work properly for my use case, but i will check it out again when it is out of preview.&lt;/p&gt;
-&lt;p&gt;Thanks to &lt;a href=&quot;http://mlogdberg.com&quot;&gt;Mattias Lögdberg&lt;/a&gt; for the help and to &lt;a href=&quot;https://stackoverflow.com/questions/42960959/authorization-identitynotfound-on-microsoft-graph-api-request/&quot;&gt;NBajanca on Stackoverflow&lt;/a&gt; for pointing out that the not so obvious fact that you need the Directory.Read.All and not User.Read.All permission to query users.&lt;/p&gt;
-&lt;p&gt;That is all, have a good day!&lt;/p&gt;</content:encoded></item></channel></rss>
+&lt;h2&gt;2. Use the application in your Logic App&lt;/h2&gt;
+&lt;p&gt;In an HTTP action, use &lt;a href=&quot;https://graph.microsoft.com/v1.0/users&quot;&gt;https://graph.microsoft.com/v1.0/users&lt;/a&gt; as URI and enter the following values after selecting &lt;strong&gt;Active Directory OAuth&lt;/strong&gt; under &lt;strong&gt;Authentication&lt;/strong&gt; (Authority needs to be added by clicking &quot;Add new parameter&quot;).&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Authority&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&quot;https://login.windows.net&quot;&gt;https://login.windows.net&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Tenant&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;Directory ID from the Application Registration&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Audience&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;a href=&quot;https://graph.microsoft.com/&quot;&gt;https://graph.microsoft.com/&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Client ID&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;Application ID from the Application Registration&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Secret&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;Client secret from the Application Registration&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Registration might take a moment, but the Logic App should then be able to fetch users from your Azure Active Directory.&lt;/p&gt;
+&lt;p&gt;Thanks to &lt;a href=&quot;http://mlogdberg.com&quot;&gt;Mattias Lögdberg&lt;/a&gt; for the help and to &lt;a href=&quot;https://stackoverflow.com/questions/42960959/authorization-identitynotfound-on-microsoft-graph-api-request/&quot;&gt;NBajanca on Stackoverflow&lt;/a&gt; for pointing out that you need the &lt;strong&gt;Directory.Read.All&lt;/strong&gt; and not &lt;strong&gt;User.Read.All&lt;/strong&gt; permission to query users.&lt;/p&gt;
+&lt;p&gt;That is all, have a good day!&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Updated 2019-12-09 to use &lt;a href=&quot;https://docs.microsoft.com/en-us/azure/active-directory/develop/app-registrations-training-guide-for-app-registrations-legacy-users&quot;&gt;the new App registrations experience in the Azure portal&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;</content:encoded></item></channel></rss>
